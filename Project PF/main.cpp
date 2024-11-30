@@ -51,6 +51,12 @@ void drawHeart(int x1, int y1, int x2, int y2) {
 }
 
 void drawGameBox() {
+
+    // title 
+    drawText(50, 600, 50, 255, 255, 255, "Space Explorers");
+    drawText(20, 150, 50, 255, 255, 255, "High Score: ", true, 0);
+    drawText(20, 150, 100, 255, 255, 255, "Score: ", true, 0);
+    
     drawHeart(1500,120,1510,110); // first heart
     drawHeart(1550, 120, 1560, 110); // second heart
     drawHeart(1600, 120, 1610, 110); // third heart
