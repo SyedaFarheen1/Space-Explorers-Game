@@ -39,16 +39,27 @@ void eraseSpaceship(int x1R, int y1R, int x1S, int y1S) {
     myRect(x1S, y1S, x1S + 10, y1S + 10, 12, 12, 12, 12, 12, 12);
 }
 
-void drawGameBox() {
+void drawHeart(int x1, int y1, int x2, int y2) {
 
+    myLine(x1, y1, x2, y2, 255, 0, 0); // top-left horizontal line - up
+    myLine(x1 + 10, y1 - 10, x2 + 10, y2 + 10, 255, 0, 0); // top-left horizontal line - down
+    myLine(x1 + 20, y1, x2 + 20, y2, 255, 0, 0); // top-right horizontal line - up
+    myLine(x1 + 30, y1 - 10, x2 + 30, y2 + 10, 255, 0, 0); // top-right horizontal line - down
+    myLine(x1, y1, x2 + 10, y2 + 30, 255, 0, 0); // bottom-left horizontal line - down
+    myLine(x1 + 20, y1 + 20, x2 + 30, y2 + 10, 255, 0, 0); // bottom-right horizontal line - up
+
+}
+
+void drawGameBox() {
+    drawHeart(1500,120,1510,110); // first heart
+    drawHeart(1550, 120, 1560, 110); // second heart
+    drawHeart(1600, 120, 1610, 110); // third heart
     // Draw the game box boundaries
     myLine(150, 160, 1750, 160, 255, 255, 255); // Top horizontal line
     myLine(150, 160, 150, 850, 255, 255, 255); // Left vertical line
     myLine(1750, 160, 1750, 850, 255, 255, 255); // Right vertical line
     myLine(150, 850, 1750, 850, 255, 255, 255); // Bottom horizontal line
 }
-
-
 
 void eraseAliens(int x1, int y1) {
     int x2 = x1 + 25;
