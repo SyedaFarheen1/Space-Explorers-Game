@@ -1,6 +1,7 @@
 #include <iostream>
 #include "help.h"
 #include <cstdlib> 
+#include <string>
 
 using namespace std;
 
@@ -11,6 +12,8 @@ bool alienActive[10][5] = { true }; // Initialize all aliens as active
 int bulletX[MAX_BULLETS] = { 0 };
 int bulletY[MAX_BULLETS] = { 0 };
 bool bulletActive[MAX_BULLETS] = { false };
+
+int score = 0;
 
 void alien(int x1, int y1) {
     int x2 = x1 + 25;
@@ -60,8 +63,10 @@ void drawGameBox() {
 
     // title 
     drawText(50, 600, 50, 255, 255, 255, "Space Explorers");
-    drawText(20, 150, 50, 255, 255, 255, "High Score: ", true, 0);
-    drawText(20, 150, 100, 255, 255, 255, "Score: ", true, 0);
+    drawText(20, 150, 50, 255, 255, 255, "High Score: ");
+    string scoreText = "Score: " + to_string(score);
+    drawText(20, 150, 100, 255, 255, 255, scoreText.c_str());
+    drawText(15, 70, 1000, 255, 255, 255, "Press 'esc' to Pause the Game ");
     
     drawHeart(1500,120,1510,110); // first heart
     drawHeart(1550, 120, 1560, 110); // second heart
@@ -72,7 +77,7 @@ void drawGameBox() {
     myLine(1750, 160, 1750, 850, 255, 255, 255); // Right vertical line
     myLine(150, 850, 1750, 850, 255, 255, 255); // Bottom horizontal line
 
-    drawText(15, 70, 1000, 255, 255, 255, "Press 'esc' to Exit the Game ");
+    
 }
 
 void eraseAliens(int x1, int y1) {
@@ -155,14 +160,14 @@ void checkBulletCollision(float alienStartX, float alienStartY) {
                     if (alienActive[x][y]) {
                         int alienX = alienStartX + (x * 50);
                         int alienY = alienStartY + (y * 80);
-                        // if bullet hits the alien
-                        if (bulletX[i] > alienX && bulletX[i] < alienX + 30 &&
-                            bulletY[i] > alienY && bulletY[i] < alienY + 30) {
-                            eraseAliens(alienX, alienY);
-                            alienActive[x][y] = false;
-                            bulletActive[i] = false; // Deactivate the bullet
-                            eraseBullet(x, y);
-                            return;
+                        // Check if bullet hits the alien
+                        if (bulletX[i] >= alienX && bulletX[i] <= alienX + 25 &&
+                            bulletY[i] >= alienY && bulletY[i] <= alienY + 25) {
+                            eraseAliens(alienX, alienY); // Remove the alien from the screen
+                            alienActive[x][y] = false;  // Mark the alien as inactive
+                            bulletActive[i] = false;   // Deactivate the bullet
+                            eraseBullet(bulletX[i], bulletY[i]); // Erase the bullet
+                            score += 10; // Increment score for successful hit
                         }
                     }
                 }
@@ -170,7 +175,6 @@ void checkBulletCollision(float alienStartX, float alienStartY) {
         }
     }
 }
-
 
 void drawPauseMenu();
 
@@ -204,9 +208,11 @@ void startGame() {
         bool keyPressed = isKeyPressed(whichKey);
         if (keyPressed == true) {
             if (whichKey == 1) {
-                eraseSpaceship(initial_x, initial_y, initial_x + 31, initial_y + 20);
-                initial_x -= 10;
-                spaceship(initial_x, initial_y, initial_x + 31, initial_y + 20);
+                if (initial_x - 1 > 150) {
+                    eraseSpaceship(initial_x, initial_y, initial_x + 31, initial_y + 20);
+                    initial_x -= 10;
+                    spaceship(initial_x, initial_y, initial_x + 31, initial_y + 20);
+                }
             }
             else if (whichKey == 2) {
                 if (initial_y - 1 > 160) {
@@ -216,12 +222,14 @@ void startGame() {
                 }
             }
             else if (whichKey == 3) {
-                eraseSpaceship(initial_x, initial_y, initial_x + 31, initial_y + 20);
-                initial_x += 10;
-                spaceship(initial_x, initial_y, initial_x + 31, initial_y + 20);
+                if (initial_x - 1 < 1695) {
+                    eraseSpaceship(initial_x, initial_y, initial_x + 31, initial_y + 20);
+                    initial_x += 10;
+                    spaceship(initial_x, initial_y, initial_x + 31, initial_y + 20);
+                }                
             }
             else if (whichKey == 4) {
-                if (initial_y - 1 < 630) {
+                if (initial_y - 1 < 795) {
                     eraseSpaceship(initial_x, initial_y, initial_x + 31, initial_y + 20);
                     initial_y += 10;
                     spaceship(initial_x, initial_y, initial_x + 31, initial_y + 20);
@@ -259,6 +267,7 @@ void drawPauseMenu() {
         int startColorR = 255, startColorG = 255, startColorB = 255;
         int resumeColorR = 255, resumeColorG = 255, resumeColorB = 255;
         int exitColorR = 255, exitColorG = 255, exitColorB = 255;
+        int saveexitColorR = 255, saveexitColorG = 255, saveexitColorB = 255;
 
         if (selectedOption == 1) {
             startColorG = 255; startColorR = 0; startColorB = 0;
@@ -267,7 +276,10 @@ void drawPauseMenu() {
             resumeColorG = 255; resumeColorR = 0; resumeColorB = 0;
         }
         else if (selectedOption == 3) {
-            exitColorG = 255; exitColorR = 0; exitColorB = 0;
+            exitColorR = 255; exitColorG = 0; exitColorB = 0;
+        }
+        else if (selectedOption == 4) {
+            saveexitColorG = 255; saveexitColorR = 0; saveexitColorB = 0;
         }
 
         // Start New Game Box
@@ -291,18 +303,28 @@ void drawPauseMenu() {
         myLine(1250, 650, 1250, 725, exitColorR, exitColorG, exitColorB);
         drawText(25, 770, 660, exitColorR, exitColorG, exitColorB, "Exit");
 
+        // Save and Exit 
+        myLine(750, 800, 1250, 800, saveexitColorR, saveexitColorG, saveexitColorB);
+        myLine(750, 800, 750, 875, saveexitColorR, saveexitColorG, saveexitColorB);
+        myLine(750, 875, 1250, 875, saveexitColorR, saveexitColorG, saveexitColorB);
+        myLine(1250, 800, 1250, 875, saveexitColorR, saveexitColorG, saveexitColorB);
+        drawText(25, 770, 810, saveexitColorR, saveexitColorG, saveexitColorB, "Save and Exit");
+
         if (isKeyPressed(whichKey)) {
             if (whichKey == 2) {
                 selectedOption--;
-                if (selectedOption < 1) selectedOption = 3; // Wrap around
+                if (selectedOption < 1) 
+                    selectedOption = 4; // Wrap around
             }
             else if (whichKey == 4) {
                 selectedOption++;
-                if (selectedOption > 3) selectedOption = 1; // Wrap around
+                if (selectedOption > 4) 
+                    selectedOption = 1; // Wrap around
             }
             else if (whichKey == 5) {
                 if (selectedOption == 1) {
                     system("cls");
+                    score = 0;
                     startGame();
                     return;
                 }
@@ -311,6 +333,9 @@ void drawPauseMenu() {
                     return;
                 }
                 else if (selectedOption == 3) {
+                    exit(0);
+                }
+                else if (selectedOption == 4) {
                     exit(0);
                 }
             }
@@ -333,7 +358,7 @@ void drawMenu() {
         scoresColorG = 255; scoresColorR = 0; scoresColorB = 0;
     }
     else if (selectedOption == 3) {
-        exitColorG = 255; exitColorR = 0; exitColorB = 0;
+        exitColorR = 255; exitColorG = 0; exitColorB = 0;
     }
 
     // Start New Game Box
