@@ -379,7 +379,7 @@ void drawText(int size, int start_x, int start_y, int R, int G, int B, const cha
 	char temp[100];
 
 	strcpy_s(temp, text);
-	//If this function takes a number to print then he converts the number into a string using following loop
+	//If this function takes a number to print then it converts the number into a string using following loop
 	if (isNum == true) {
 		int reverse_num = 0;
 		int i;
