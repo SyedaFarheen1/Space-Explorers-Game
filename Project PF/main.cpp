@@ -6,13 +6,13 @@
 using namespace std;
 
 const int MAX_BULLETS = 1000;
-bool alienActive[10][5] = { true }; // Initialize all aliens as active
+bool alienActive[5][10] = { true }; // Initialize all aliens as active
 
 // arrays to store bullet positions
 int bulletX[MAX_BULLETS] = { 0 };
 int bulletY[MAX_BULLETS] = { 0 };
-bool bulletActive[MAX_BULLETS] = { false };
-
+bool bulletActive[MAX_BULLETS] = { true };
+int prev_score = 0;
 int score = 0;
 
 void alien(int x1, int y1) {
@@ -25,16 +25,25 @@ void alien(int x1, int y1) {
     myLine(x3, y3, x1, y1, 50, 255, 0); // Left edge
 }
 
-void alienMatrix(int x1, int y1) {
-    int i = 0;
-    int j = 0;
-    for (int x = x1; x < (x1 + 500); x += 50) {
-        for (int y = y1; y < (y1 + 400); y += 80) {
-           // if (alienActive[i][j])
+void drawAliens(int x1, int y1) {
+    //int i = 0;
+    //int j = 0;
+    //for (int x = x1; x < (x1 + 500); x += 50) {
+    //    for (int y = y1; y < (y1 + 400); y += 80) {
+    //       if (alienActive[i][j])
+    //            alien(x, y);
+    //        j++;
+    //    }
+    //    i++;
+    //}
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 10; j++) {
+            if (alienActive[i][j]) {
+                int x = x1 + j * 50;
+                int y = y1 + i * 80;
                 alien(x, y);
-            j++;
+            }
         }
-        i++;
     }
 }
 
@@ -65,6 +74,8 @@ void drawGameBox() {
     drawText(50, 600, 50, 255, 255, 255, "Space Explorers");
     drawText(20, 150, 50, 255, 255, 255, "High Score: ");
     string scoreText = "Score: " + to_string(score);
+    string pscoreText = "Score: " + to_string(prev_score);
+    drawText(20, 150, 100, 0, 0, 0, pscoreText.c_str());
     drawText(20, 150, 100, 255, 255, 255, scoreText.c_str());
     drawText(15, 70, 1000, 255, 255, 255, "Press 'esc' to Pause the Game ");
     
@@ -80,7 +91,7 @@ void drawGameBox() {
     
 }
 
-void eraseAliens(int x1, int y1) {
+void eraseAlien(int x1, int y1) {
     int x2 = x1 + 25;
     int y2 = y1;
     float x3 = x1 + 12.5;
@@ -120,10 +131,14 @@ void moveAliens(float& x1, float& y1, int& prevX, int& prevY, bool& moveDown, bo
     }
 }
 
-void eraseAlienMatrix(int x1, int y1) {
-    for (int x = x1; x < (x1 + 500); x += 50) {
-        for (int y = y1; y < (y1 + 400); y += 80) {
-                eraseAliens(x, y);
+void eraseAliens(int x1, int y1) {
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 10; j++) {
+            if (alienActive[i][j]) {
+                int x = x1 + j * 50;
+                int y = y1 + i * 80;
+                eraseAlien(x, y);
+            }
         }
     }
 }
@@ -152,21 +167,25 @@ void updateBullets() {
     }
 }
 
+bool checkIfCollision(int bx, int by, int ax, int ay) {
+    return (bx >= ax && bx <= ax + 30) && (by >= ay && by <= ay + 25);
+}
+
 void checkBulletCollision(float alienStartX, float alienStartY) {
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (bulletActive[i]) {
-            for (int x = 0; x < 10; x++) {
-                for (int y = 0; y < 5; y++) {
+            for (int x = 0; x < 5; x++) {
+                for (int y = 0; y < 10; y++) {
                     if (alienActive[x][y]) {
-                        int alienX = alienStartX + (x * 50);
-                        int alienY = alienStartY + (y * 80);
+                        int alienX = alienStartX + (y * 50);
+                        int alienY = alienStartY + (x * 80);
                         // Check if bullet hits the alien
-                        if (bulletX[i] >= alienX && bulletX[i] <= alienX + 25 &&
-                            bulletY[i] >= alienY && bulletY[i] <= alienY + 25) {
-                            eraseAliens(alienX, alienY); // Remove the alien from the screen
+                        if (checkIfCollision(bulletX[i], bulletY[i], alienX, alienY)) {
+                            eraseAlien(alienX, alienY); // Remove the alien ))from the screen
                             alienActive[x][y] = false;  // Mark the alien as inactive
                             bulletActive[i] = false;   // Deactivate the bullet
                             eraseBullet(bulletX[i], bulletY[i]); // Erase the bullet
+                            prev_score = score;
                             score += 10; // Increment score for successful hit
                         }
                     }
@@ -197,9 +216,9 @@ void startGame() {
 
     while (true) {
         drawGameBox();
-        eraseAlienMatrix(prevAlienX, prevAlienY);
+        eraseAliens(prevAlienX, prevAlienY);
         moveAliens(alienStartX, alienStartY, prevAlienX, prevAlienY, moveDown, move);
-        alienMatrix(alienStartX, alienStartY);
+        drawAliens(alienStartX, alienStartY);
 
         updateBullets();
         checkBulletCollision(alienStartX, alienStartY);
@@ -324,6 +343,7 @@ void drawPauseMenu() {
             else if (whichKey == 5) {
                 if (selectedOption == 1) {
                     system("cls");
+                    prev_score = 0;
                     score = 0;
                     startGame();
                     return;
@@ -407,6 +427,11 @@ void drawMenu() {
 }
 
 int main() {
+    for (int x = 0; x < 5; x++) {
+        for (int y = 0; y < 10; y++) {
+            alienActive[x][y] = true;
+        }
+    }
     while (true) {
         drawMenu();
     }
