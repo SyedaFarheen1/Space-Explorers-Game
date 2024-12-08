@@ -15,6 +15,7 @@ bool bulletActive[MAX_BULLETS] = { true };
 int prev_score = 0;
 int score = 0;
 int heartStatus = 3;
+bool playerDied = false;
 
 void alien(int x1, int y1) {
     int x2 = x1 + 25;
@@ -63,24 +64,25 @@ void drawGameBox(bool ifScore, int heart) {
 
     // title 
     drawText(50, 600, 50, 255, 255, 255, "Space Explorers");
-    drawText(20, 150, 50, 255, 255, 255, "High Score: ");
-    if (ifScore) {
-        string scoreText = "Score: " + to_string(score);
-        string pscoreText = "Score: " + to_string(prev_score);
+    drawText(20, 150, 50, 255, 255, 0, "High Score: ");
+    string pscoreText = "Score: " + to_string(prev_score);
+    if (prev_score != score) {
         drawText(20, 150, 100, 0, 0, 0, pscoreText.c_str());
-        drawText(20, 150, 100, 255, 255, 255, scoreText.c_str());
     }
-    else 
-		drawText(20, 150, 100, 255, 255, 255, "Score: 0");
+    string scoreText = "Score: " + to_string(score);
+    drawText(20, 150, 100, 255, 255, 255, scoreText.c_str());
     
     drawText(15, 70, 1000, 255, 255, 255, "Press 'esc' to Pause the Game ");
     
     if (heart == 3) {
         drawHeart(1500, 120, 1510, 110, 255, 0, 0); // first heart
         drawHeart(1550, 120, 1560, 110, 255, 0, 0); // second heart
+		drawHeart(1600, 120, 1610, 110, 192, 192, 192); // third heart erased
     }
     if (heart == 2) {
-        drawHeart(1500, 120, 1510, 110, 255, 0, 0); // first heart       
+        drawHeart(1500, 120, 1510, 110, 255, 0, 0); // first heart   
+        drawHeart(1550, 120, 1560, 110, 192, 192, 192); // second heart erased
+        drawHeart(1600, 120, 1610, 110, 192, 192, 192); // third heart erased
     }    
     if (heart == 0) {
         drawHeart(1500, 120, 1510, 110, 255, 0, 0); // first heart       
@@ -98,16 +100,14 @@ void drawGameBox(bool ifScore, int heart) {
 int eraseHeart(int num) {
     if (num == 1) {
         drawHeart(1500, 120, 1510, 110, 192, 192, 192); // erase first heart
-        return num;
     }
     if (num == 2) {
         drawHeart(1550, 120, 1560, 110, 192, 192, 192); // erase second heart
-        return num;
     }
     if (num == 3) {
         drawHeart(1600, 120, 1610, 110, 192, 192, 192); // erase third heart
-        return num;
     }
+    return num;
 }
 
 void eraseAlien(int x1, int y1) {
@@ -121,11 +121,15 @@ void eraseAlien(int x1, int y1) {
     myLine(x3, y3, x1, y1, 12, 12, 12);
 }
 
+void eraseAliens(int x1, int y1);
+
 void moveAliens(float& x1, float& y1, int& prevX, int& prevY, bool& moveDown, bool move) {
     if (move) {
         static int moveCounter = 0;
         prevX = x1;
         prevY = y1;
+        eraseAliens(prevX, prevY);
+		int x = x1, y = y1;
 
         // updating position based on direction and bounds
         if (y1 <= 180)
@@ -141,7 +145,20 @@ void moveAliens(float& x1, float& y1, int& prevX, int& prevY, bool& moveDown, bo
         }
 
         if (++moveCounter >= 50) {
-            if (x1 > 200) {
+            int leftmostX = x1 + 9 * 50; // Initialize to the rightmost possible position
+            for (int i = 0; i < 5; i++) {
+                for (int j = 9; j > 0; j--) {
+                    if (alienActive[i][j]) {
+                        int x = x1 + j * 50;
+                        if (x < leftmostX) {
+                            leftmostX = x;
+                        }
+                    }
+                }
+            }
+
+            // Move left if the leftmost active alien's x-coordinate is greater than 200
+            if (leftmostX > 200) {
                 x1 -= 100;
             }
             moveCounter = 0;
@@ -171,7 +188,7 @@ void eraseBullet(int x, int y) {
 
 void updateBullets() {
     for (int i = 0; i < MAX_BULLETS; ++i) {
-        if (bulletActive[i]) {
+        if ( bulletActive[i]) {
             eraseBullet(bulletX[i], bulletY[i]);
             bulletX[i] += 10;
 
@@ -205,7 +222,7 @@ bool checkIfSpaceshipCollision(int spaceshipX, int spaceshipY, int alienX, int a
     return collisionX && collisionY;
 }
 
-void startGame(bool score, int heart);
+void startGame(bool score, int heart, bool restart);
 
 void GameOver(bool playerDied);
 
@@ -221,21 +238,18 @@ void checkSpaceshipCollision(float spaceshipX, float spaceshipY, float alienStar
                         heart = eraseHeart(hearts); // Erase one heart
                         --hearts;
                         if (hearts == 0) {
-                            bool playerDied = true;
+                            playerDied = true;
                             GameOver(playerDied);
                             return;
                         }
-                        eraseAliens(alienX, alienY);
-                        eraseSpaceship(spaceshipX, spaceshipY, spaceshipX + 31, spaceshipY + 20);
-                        startGame(true, heart);
+                        system("cls");
+                        startGame(true, heart, false);
                     }
                 }
             }
         }
     }
 }
-
-
 
 void checkBulletCollision(float alienStartX, float alienStartY) {
     for (int i = 0; i < MAX_BULLETS; i++) {
@@ -264,31 +278,44 @@ void checkBulletCollision(float alienStartX, float alienStartY) {
 
 void drawPauseMenu();
 
-void startGame(bool score, int heart) {
+void checkLeftBoundaryCollision(int alienStartX, int alienStartY);
+
+
+void startGame(bool score, int heart, bool restart) {
     int whichKey;
+    prev_score = score ? 0 : prev_score;
+    if (restart)
+        heartStatus = 3;
 
     // Initial position for spaceship
-    float initial_x = 300;
-    float initial_y = 300;
+    float initial_x = 300.0;
+    float initial_y = 300.0;
 
     // Initial positions for aliens
-    float alienStartX = 1250;
-    float alienStartY = 200;
+    float alienStartX = 1250.0;
+    float alienStartY = 200.0;
     int prevAlienX = alienStartX;
     int prevAlienY = alienStartY;
     bool moveDown = true;
     bool move = true;
+
+    for (int i = 0; i < MAX_BULLETS; ++i) {
+        bulletX[i] = 0;
+        bulletY[i] = 0;
+        bulletActive[i] = false;
+    }
   
     spaceship(initial_x, initial_y, initial_x + 31, initial_y + 20);
 
     while (true) {
         drawGameBox(score, heart);
-        eraseAliens(prevAlienX, prevAlienY);
         moveAliens(alienStartX, alienStartY, prevAlienX, prevAlienY, moveDown, move);
         drawAliens(alienStartX, alienStartY);
+		checkLeftBoundaryCollision(alienStartX, alienStartY);
 		checkSpaceshipCollision(initial_x, initial_y, alienStartX, alienStartY, heartStatus);
         updateBullets();
         checkBulletCollision(alienStartX, alienStartY);
+        
 
         // Check for key presses to move the spaceship
         bool keyPressed = isKeyPressed(whichKey);
@@ -342,6 +369,14 @@ void startGame(bool score, int heart) {
                 drawPauseMenu();
                 move = true;
             }
+        }
+    }
+}
+
+void resetAliens() {
+    for (int i = 0; i < 5; ++i) {
+        for (int j = 0; j < 10; ++j) {
+            alienActive[i][j] = true;
         }
     }
 }
@@ -416,13 +451,9 @@ void drawPauseMenu() {
                     system("cls");
                     prev_score = 0;
                     score = 0;
-                    for (int i = 0; i < 5; i++) {
-                        for (int j = 0; i < 10; j++) {
-                            alienActive[i][j] = true;
-                        }
-                    }                 
+                    resetAliens();
                     drawAliens(1250, 200);
-                    startGame(false, 0);
+                    startGame(false, 0, true);
                     return;
                 }
                 else if (selectedOption == 2) {
@@ -491,7 +522,7 @@ void drawMenu() {
         else if (whichKey == 5) {
             if (selectedOption == 1) {
                 system("cls");
-                startGame(false, 0);
+                startGame(false, 0, true);
             }
             else if (selectedOption == 2) {
                 return;
@@ -502,6 +533,23 @@ void drawMenu() {
         }
     }
 }
+
+void checkLeftBoundaryCollision(int alienStartX, int alienStartY) {
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 10; j++) {
+            if (alienActive[i][j]) {
+                int x = alienStartX + j * 50;
+                int y = alienStartY + i * 80;
+                if (x <= 150) { // Left game boundary
+                    playerDied = true;
+                    GameOver(playerDied);
+                }
+            }
+        }
+    }
+    return;
+}
+
 
 bool checkAliensDead() {
     bool check = false;
@@ -578,13 +626,10 @@ void drawWinGame() {
                     system("cls");
                     prev_score = 0;
                     score = 0;
-                    for (int i = 0; i < 5; i++) {
-                        for (int j = 0; i < 10; j++) {
-                            //alienActive[i][j] = true;
-                        }
-                    }
+                    resetAliens();
                     drawAliens(1250, 200);
-                    startGame(true, 0);
+                    system("cls");
+                    startGame(true, 0, true);
                     return;
                 }
                 else if (selectedOption == 2) {
@@ -656,13 +701,10 @@ void drawLoseGame() {
                     system("cls");
                     prev_score = 0;
                     score = 0;
-                    for (int i = 0; i < 5; i++) {
-                        for (int j = 0; i < 10; j++) {
-                            //alienActive[i][j] = true;
-                        }
-                    }
-                    drawAliens(1250, 200);
-                    startGame(true, 0);
+                    resetAliens();
+                    drawAliens(1250, 200); 
+                    system("cls");
+                    startGame(true, 0, true);
                     return;
                 }
                 else if (selectedOption == 2) {
