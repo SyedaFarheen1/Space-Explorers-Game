@@ -83,6 +83,13 @@ bool isKeyPressed(int& whichKey)   //whichKey passed as reference....
 		whichKey = 7;   // 7 if escape key is pressed
 		return true;
 	}
+	key = GetAsyncKeyState(32);
+	if (key == 1)
+	{
+
+		whichKey = 8;   // 8 if space bar is pressed
+		return true;
+	}
 	return false;
 }
 

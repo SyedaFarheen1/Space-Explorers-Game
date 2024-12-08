@@ -2,8 +2,16 @@
 #include "help.h"
 #include <cstdlib> 
 #include <string>
+#include <fstream>
+#include <windows.h>
+#include <mmsystem.h>
+#pragma comment(lib, "winmm.lib") // link with the winmm library
 
 using namespace std;
+
+int spaceshipX, spaceshipY;
+float alienX, alienY;
+bool moveDown;
 
 const int MAX_BULLETS = 1000;
 bool alienActive[5][10] = { true }; // Initialize all aliens as active
@@ -60,42 +68,204 @@ void drawHeart(int x1, int y1, int x2, int y2, int R, int G, int B) {
 
 }
 
-void drawGameBox(bool ifScore, int heart) {
+void saveGameState(int spaceshipX, int spaceshipY, float alienX, float alienY, bool moveDown) {
+    ofstream outFile("gamestate.txt");
+    if (outFile.is_open()) {
+        // Save spaceship position
+        outFile << spaceshipX << " " << spaceshipY << endl;
 
+        // Save alien positions and status
+        outFile << alienX << " " << alienY << " " << moveDown << endl;
+        for (int i = 0; i < 5; ++i) {
+            for (int j = 0; j < 10; ++j) {
+                outFile << alienActive[i][j] << " ";
+            }
+            outFile << endl;
+        }
+
+        // Save heart status
+        outFile << heartStatus << endl;
+
+        // Save score
+        outFile << score << endl;
+
+        outFile.close();
+        cout << "Game state saved successfully!" << endl;
+    }
+    else {
+        cout << "Unable to open file for saving game state." << endl;
+    }
+}
+
+void loadGameState(int& spaceshipX, int& spaceshipY, float& alienX, float& alienY, bool& moveDown) {
+    ifstream inFile("gamestate.txt");
+    if (inFile.is_open()) {
+        // Load spaceship position
+        inFile >> spaceshipX >> spaceshipY;
+
+        // Load alien positions and status
+        inFile >> alienX >> alienY >> moveDown;
+        for (int i = 0; i < 5; ++i) {
+            for (int j = 0; j < 10; ++j) {
+                inFile >> alienActive[i][j];
+            }
+        }
+
+        // Load heart status
+        inFile >> heartStatus;
+
+        // Load score
+        inFile >> score;
+
+        inFile.close();
+        cout << "Game state loaded successfully!" << endl;
+    }
+    else {
+        cout << "Unable to open file for loading game state." << endl;
+    }
+}
+
+void saveScore(int currentScore, int heartStatus) {
+    bool scoreExists = false;
+    ifstream inFile("scores.txt");
+
+    // Check if the score already exists
+    int score, hearts;
+    if (inFile.is_open()) {
+        while (inFile >> score >> hearts) {
+            if (score == currentScore && hearts == heartStatus) {
+                scoreExists = true;
+                break;
+            }
+        }
+        inFile.close();
+    }
+    else {
+        cout << "Unable to open file for reading." << endl;
+    }
+
+    // Save the current score and heart status if it is not already present
+    if (!scoreExists) {
+        ofstream outFile("scores.txt", ios::app);
+        if (outFile.is_open()) {
+            outFile << currentScore << " " << heartStatus << endl;
+            outFile.close();
+            cout << "Score and heart status saved successfully!" << endl; // Confirmation message
+        }
+        else {
+            cout << "Unable to open file for writing." << endl;
+        }
+    }
+    else {
+        cout << "Score and heart status already exist. Not saved." << endl;
+    }
+}
+
+// Function to display the 5 highest scores
+void displayHighScores() {
+    ifstream inFile("highscores.txt");
+    int score;
+    int rank = 1;
+
+    if (inFile.is_open()) {
+        cout << "Top 5 High Scores:" << endl;
+        while (inFile >> score) {
+            cout << rank << ". " << score << endl;
+            ++rank;
+        }
+        inFile.close();
+    }
+    else {
+        cout << "Unable to open file for reading." << endl;
+    }
+}
+
+// Function to calculate the highest score
+int calculateHighScore() {
+    ifstream inFile("scores.txt");
+    int score, hearts;
+    int highestScore = 0;
+    int leastHeartsErased = 4;
+	int highScores[5] = { 0 }; // Array to store the top 5 scores
+
+    if (inFile.is_open()) {
+        while (inFile >> score >> hearts) {
+            if ((score > highestScore) || (score == highestScore && hearts < leastHeartsErased)) {
+                highestScore = score;
+                leastHeartsErased = hearts;
+            }
+            for (int i = 0; i < 5; ++i) {
+                if (score > highScores[i]) {
+                    // Shift lower scores down
+                    for (int j = 4; j > i; --j) {
+                        highScores[j] = highScores[j - 1];
+                    }
+                    highScores[i] = score;
+                    break;
+                }
+            }
+        }
+        inFile.close();
+    }
+    else {
+        cout << "Unable to open file for reading." << endl;
+    }
+    ofstream outFile("highscores.txt");
+    if (outFile.is_open()) {
+        for (int i = 0; i < 5; ++i) {
+            outFile << highScores[i] << endl;
+        }
+        outFile.close();
+    }
+    else {
+        cout << "Unable to open file for writing." << endl;
+    }
+    return highestScore;
+}
+
+void drawGameBox(bool ifScore) {
     // title 
     drawText(50, 600, 50, 255, 255, 255, "Space Explorers");
-    drawText(20, 150, 50, 255, 255, 0, "High Score: ");
+    int highScore = calculateHighScore();
+    string highScoreText = "High Score: " + to_string(highScore);
+    drawText(20, 150, 50, 255, 255, 0, highScoreText.c_str());
     string pscoreText = "Score: " + to_string(prev_score);
     if (prev_score != score) {
         drawText(20, 150, 100, 0, 0, 0, pscoreText.c_str());
     }
     string scoreText = "Score: " + to_string(score);
     drawText(20, 150, 100, 255, 255, 255, scoreText.c_str());
-    
+
     drawText(15, 70, 1000, 255, 255, 255, "Press 'esc' to Pause the Game ");
-    
-    if (heart == 3) {
+
+    if (heartStatus == 3) {
         drawHeart(1500, 120, 1510, 110, 255, 0, 0); // first heart
-        drawHeart(1550, 120, 1560, 110, 255, 0, 0); // second heart
-		drawHeart(1600, 120, 1610, 110, 192, 192, 192); // third heart erased
-    }
-    if (heart == 2) {
-        drawHeart(1500, 120, 1510, 110, 255, 0, 0); // first heart   
-        drawHeart(1550, 120, 1560, 110, 192, 192, 192); // second heart erased
-        drawHeart(1600, 120, 1610, 110, 192, 192, 192); // third heart erased
-    }    
-    if (heart == 0) {
-        drawHeart(1500, 120, 1510, 110, 255, 0, 0); // first heart       
         drawHeart(1550, 120, 1560, 110, 255, 0, 0); // second heart
         drawHeart(1600, 120, 1610, 110, 255, 0, 0); // third heart
     }
-    
+    else if (heartStatus == 2) {
+        drawHeart(1500, 120, 1510, 110, 255, 0, 0); // first heart   
+        drawHeart(1550, 120, 1560, 110, 255, 0, 0); // second heart
+        drawHeart(1600, 120, 1610, 110, 192, 192, 192); // third heart erased
+    }
+    else if (heartStatus == 1) {
+        drawHeart(1500, 120, 1510, 110, 255, 0, 0); // first heart   
+        drawHeart(1550, 120, 1560, 110, 192, 192, 192); // second heart erased
+        drawHeart(1600, 120, 1610, 110, 192, 192, 192); // third heart erased
+    }
+    else if (heartStatus == 0) {
+        drawHeart(1500, 120, 1510, 110, 192, 192, 192); // first heart erased
+        drawHeart(1550, 120, 1560, 110, 192, 192, 192); // second heart erased
+        drawHeart(1600, 120, 1610, 110, 192, 192, 192); // third heart erased
+    }
+
     // Draw the game box boundaries
     myLine(150, 160, 1750, 160, 255, 255, 255); // Top horizontal line
     myLine(150, 160, 150, 850, 255, 255, 255); // Left vertical line
     myLine(1750, 160, 1750, 850, 255, 255, 255); // Right vertical line
     myLine(150, 850, 1750, 850, 255, 255, 255); // Bottom horizontal line 
 }
+
 
 int eraseHeart(int num) {
     if (num == 1) {
@@ -157,8 +327,7 @@ void moveAliens(float& x1, float& y1, int& prevX, int& prevY, bool& moveDown, bo
                 }
             }
 
-            // Move left if the leftmost active alien's x-coordinate is greater than 200
-            if (leftmostX > 200) {
+            if (leftmostX > 150) {
                 x1 -= 100;
             }
             moveCounter = 0;
@@ -222,7 +391,7 @@ bool checkIfSpaceshipCollision(int spaceshipX, int spaceshipY, int alienX, int a
     return collisionX && collisionY;
 }
 
-void startGame(bool score, int heart, bool restart);
+void startGame(bool score, bool restart);
 
 void GameOver(bool playerDied);
 
@@ -237,13 +406,14 @@ void checkSpaceshipCollision(float spaceshipX, float spaceshipY, float alienStar
                     if (hearts > 0) {
                         heart = eraseHeart(hearts); // Erase one heart
                         --hearts;
+                        PlaySound(TEXT("negativeBeeps.wav"), NULL, SND_FILENAME | SND_ASYNC);
                         if (hearts == 0) {
                             playerDied = true;
                             GameOver(playerDied);
                             return;
                         }
                         system("cls");
-                        startGame(true, heart, false);
+                        startGame(true, false);
                     }
                 }
             }
@@ -276,17 +446,19 @@ void checkBulletCollision(float alienStartX, float alienStartY) {
     GameOver(false);
 }
 
-void drawPauseMenu();
+void drawPauseMenu(int spaceshipX, int spaceshipY, float alienX, float alienY, bool moveDown);
 
 void checkLeftBoundaryCollision(int alienStartX, int alienStartY);
 
-
-void startGame(bool score, int heart, bool restart) {
+void startGame(bool score, bool restart) {
     int whichKey;
     prev_score = score ? 0 : prev_score;
-    if (restart)
+    if (restart) {
+        PlaySound(TEXT("Countdown.wav"), NULL, SND_FILENAME | SND_ASYNC);
+        system("cls");
+		Sleep(3000);
         heartStatus = 3;
-
+    }
     // Initial position for spaceship
     float initial_x = 300.0;
     float initial_y = 300.0;
@@ -308,7 +480,7 @@ void startGame(bool score, int heart, bool restart) {
     spaceship(initial_x, initial_y, initial_x + 31, initial_y + 20);
 
     while (true) {
-        drawGameBox(score, heart);
+        drawGameBox(score);
         moveAliens(alienStartX, alienStartY, prevAlienX, prevAlienY, moveDown, move);
         drawAliens(alienStartX, alienStartY);
 		checkLeftBoundaryCollision(alienStartX, alienStartY);
@@ -352,7 +524,8 @@ void startGame(bool score, int heart, bool restart) {
                     checkSpaceshipCollision(initial_x, initial_y, alienStartX, alienStartY, heartStatus);
                 }
             }
-            else if (whichKey == 5) {
+            else if (whichKey == 8) {
+                PlaySound(TEXT("laserBullet.wav"), NULL, SND_FILENAME | SND_ASYNC); // Play laser sound
                 for (int i = 0; i < MAX_BULLETS; ++i) {
                     if (!bulletActive[i]) {
                         bulletX[i] = initial_x + 42; // Bullet starts at spaceship's tip
@@ -366,7 +539,11 @@ void startGame(bool score, int heart, bool restart) {
             else if (whichKey == 7) {
                 move = false;
                 system("cls");
-                drawPauseMenu();
+                spaceshipX = initial_x;
+                spaceshipY = initial_y;
+				alienX = alienStartX;
+				alienY = alienStartY;
+                drawPauseMenu(spaceshipX, spaceshipY, alienX, alienY, moveDown);
                 move = true;
             }
         }
@@ -381,7 +558,7 @@ void resetAliens() {
     }
 }
 
-void drawPauseMenu() {
+void drawPauseMenu(int spaceshipX, int spaceshipY, float alienX, float alienY, bool moveDown) {
     int selectedOption = 2; // Default
     int whichKey;
 
@@ -453,7 +630,7 @@ void drawPauseMenu() {
                     score = 0;
                     resetAliens();
                     drawAliens(1250, 200);
-                    startGame(false, 0, true);
+                    startGame(false, true);
                     return;
                 }
                 else if (selectedOption == 2) {
@@ -464,6 +641,8 @@ void drawPauseMenu() {
                     exit(0);
                 }
                 else if (selectedOption == 4) {
+                    saveScore(score, heartStatus);
+					saveGameState(spaceshipX, spaceshipY, alienX, alienY, moveDown);
                     exit(0);
                 }
             }
@@ -471,10 +650,11 @@ void drawPauseMenu() {
     }
 }
 
-void drawMenu() {
+void drawMenu(int spaceshipX, int spaceshipY, float alienX, float alienY, bool moveDown) {
     static int selectedOption = 1; // default
     int whichKey;
     drawText(50, 600, 50, 255, 255, 255, "Space Explorers");
+    drawText(20, 580, 800, 255, 255, 0, "Press the esc key to view your top 5 scores");
 
     int startColorR = 255, startColorG = 255, startColorB = 255;
     int scoresColorR = 255, scoresColorG = 255, scoresColorB = 255;
@@ -501,7 +681,7 @@ void drawMenu() {
     myLine(700, 500, 700, 575, scoresColorR, scoresColorG, scoresColorB);
     myLine(700, 575, 1250, 575, scoresColorR, scoresColorG, scoresColorB);
     myLine(1250, 500, 1250, 575, scoresColorR, scoresColorG, scoresColorB);
-    drawText(25, 720, 510, scoresColorR, scoresColorG, scoresColorB, "View Previous Scores");
+    drawText(25, 720, 510, scoresColorR, scoresColorG, scoresColorB, "Load Previous Game");
 
     // Exit Box
     myLine(700, 650, 1250, 650, exitColorR, exitColorG, exitColorB);
@@ -522,14 +702,22 @@ void drawMenu() {
         else if (whichKey == 5) {
             if (selectedOption == 1) {
                 system("cls");
-                startGame(false, 0, true);
+                startGame(false, true);
             }
-            else if (selectedOption == 2) {
+			else if (selectedOption == 2) {
+				system("cls");
+				loadGameState(spaceshipX, spaceshipY, alienX, alienY, moveDown);
+				startGame(false, false);
                 return;
             }
             else if (selectedOption == 3) {
                 exit(0);
             }
+        }
+        else if (whichKey == 7) {
+			system("cls");
+            displayHighScores();
+            return;
         }
     }
 }
@@ -549,7 +737,6 @@ void checkLeftBoundaryCollision(int alienStartX, int alienStartY) {
     }
     return;
 }
-
 
 bool checkAliensDead() {
     bool check = false;
@@ -571,6 +758,7 @@ bool checkAliensDead() {
 void drawWinGame() {
     int selectedOption = 1; // Default
     int whichKey;
+	PlaySound(TEXT("YouWin.wav"), NULL, SND_FILENAME | SND_ASYNC); // Play win sound
     while (true) {
         drawText(50, 600, 50, 255, 255, 255, "Space Explorers");
         drawText(50, 750, 200, 0, 255, 0, "YOU WIN!");
@@ -629,13 +817,14 @@ void drawWinGame() {
                     resetAliens();
                     drawAliens(1250, 200);
                     system("cls");
-                    startGame(true, 0, true);
+                    startGame(true, true);
                     return;
                 }
                 else if (selectedOption == 2) {
                     exit(0);
                 }
                 else if (selectedOption == 3) {
+					saveScore(score, heartStatus);
                     exit(0);
                 }
             }
@@ -646,6 +835,7 @@ void drawWinGame() {
 void drawLoseGame() {
     int selectedOption = 1; // Default
     int whichKey;
+	PlaySound(TEXT("YouLose.wav"), NULL, SND_FILENAME | SND_ASYNC); // Play lose sound
     while (true) {
         drawText(50, 600, 50, 255, 255, 255, "Space Explorers");
         drawText(50, 750, 200, 255, 0, 0, "YOU LOST!");
@@ -704,13 +894,14 @@ void drawLoseGame() {
                     resetAliens();
                     drawAliens(1250, 200); 
                     system("cls");
-                    startGame(true, 0, true);
+                    startGame(true, true);
                     return;
                 }
                 else if (selectedOption == 2) {
                     exit(0);
                 }
                 else if (selectedOption == 3) {
+					saveScore(score, heartStatus);
                     exit(0);
                 }
             }
@@ -739,7 +930,13 @@ int main() {
         }
     }
     while (true) {
-        drawMenu();
+        ofstream outFile("scores.txt", ios::app);
+        if (!outFile.is_open()) {
+            cout << "Unable to create file." << endl;
+            return 1;
+        }
+        outFile.close();
+        drawMenu(spaceshipX, spaceshipY, alienX, alienY, moveDown);
     }
     return 0;
 }
