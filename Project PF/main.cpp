@@ -76,8 +76,8 @@ void saveGameState(int spaceshipX, int spaceshipY, float alienX, float alienY, b
 
         // Save alien positions and status
         outFile << alienX << " " << alienY << " " << moveDown << endl;
-        for (int i = 0; i < 5; ++i) {
-            for (int j = 0; j < 10; ++j) {
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 10; j++) {
                 outFile << alienActive[i][j] << " ";
             }
             outFile << endl;
@@ -105,8 +105,8 @@ void loadGameState(int& spaceshipX, int& spaceshipY, float& alienX, float& alien
 
         // Load alien positions and status
         inFile >> alienX >> alienY >> moveDown;
-        for (int i = 0; i < 5; ++i) {
-            for (int j = 0; j < 10; ++j) {
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 10; j++) {
                 inFile >> alienActive[i][j];
             }
         }
@@ -171,7 +171,7 @@ void displayHighScores() {
         cout << "Top 5 High Scores:" << endl;
         while (inFile >> score) {
             cout << rank << ". " << score << endl;
-            ++rank;
+            rank++;
         }
         inFile.close();
     }
@@ -186,7 +186,7 @@ int calculateHighScore() {
     int score, hearts;
     int highestScore = 0;
     int leastHeartsErased = 4;
-	int highScores[5] = { 0 }; // Array to store the top 5 scores
+    int highScores[5] = { 0 }; // Array to store the top 5 scores
 
     if (inFile.is_open()) {
         while (inFile >> score >> hearts) {
@@ -194,10 +194,10 @@ int calculateHighScore() {
                 highestScore = score;
                 leastHeartsErased = hearts;
             }
-            for (int i = 0; i < 5; ++i) {
+            for (int i = 0; i < 5; i++) {
                 if (score > highScores[i]) {
                     // Shift lower scores down
-                    for (int j = 4; j > i; --j) {
+                    for (int j = 4; j > i; j--) {
                         highScores[j] = highScores[j - 1];
                     }
                     highScores[i] = score;
@@ -212,7 +212,7 @@ int calculateHighScore() {
     }
     ofstream outFile("highscores.txt");
     if (outFile.is_open()) {
-        for (int i = 0; i < 5; ++i) {
+        for (int i = 0; i < 5; i++) {
             outFile << highScores[i] << endl;
         }
         outFile.close();
@@ -299,7 +299,7 @@ void moveAliens(float& x1, float& y1, int& prevX, int& prevY, bool& moveDown, bo
         prevX = x1;
         prevY = y1;
         eraseAliens(prevX, prevY);
-		int x = x1, y = y1;
+        int x = x1, y = y1;
 
         // updating position based on direction and bounds
         if (y1 <= 180)
@@ -348,16 +348,16 @@ void eraseAliens(int x1, int y1) {
 }
 
 void drawBullet(int x, int y) {
-    myRect(x, y, x + 5, y + 10, 255, 255, 0, 255, 255, 0); 
+    myRect(x, y, x + 5, y + 10, 255, 255, 0, 255, 255, 0);
 }
 
 void eraseBullet(int x, int y) {
-    myRect(x, y, x + 5, y + 10, 12, 12, 12, 12, 12, 12); 
+    myRect(x, y, x + 5, y + 10, 12, 12, 12, 12, 12, 12);
 }
 
 void updateBullets() {
     for (int i = 0; i < MAX_BULLETS; ++i) {
-        if ( bulletActive[i]) {
+        if (bulletActive[i]) {
             eraseBullet(bulletX[i], bulletY[i]);
             bulletX[i] += 10;
 
@@ -401,7 +401,7 @@ void checkSpaceshipCollision(float spaceshipX, float spaceshipY, float alienStar
         for (int y = 0; y < 10; y++) {
             if (alienActive[x][y]) {
                 int alienX = alienStartX + (y * 50);
-                int alienY = alienStartY + (x * 80); 
+                int alienY = alienStartY + (x * 80);
                 if (checkIfSpaceshipCollision(spaceshipX, spaceshipY, alienX, alienY)) {
                     if (hearts > 0) {
                         heart = eraseHeart(hearts); // Erase one heart
@@ -456,7 +456,7 @@ void startGame(bool score, bool restart) {
     if (restart) {
         PlaySound(TEXT("Countdown.wav"), NULL, SND_FILENAME | SND_ASYNC);
         system("cls");
-		Sleep(3000);
+        Sleep(3000);
         heartStatus = 3;
     }
     // Initial position for spaceship
@@ -476,18 +476,18 @@ void startGame(bool score, bool restart) {
         bulletY[i] = 0;
         bulletActive[i] = false;
     }
-  
+
     spaceship(initial_x, initial_y, initial_x + 31, initial_y + 20);
 
     while (true) {
         drawGameBox(score);
         moveAliens(alienStartX, alienStartY, prevAlienX, prevAlienY, moveDown, move);
         drawAliens(alienStartX, alienStartY);
-		checkLeftBoundaryCollision(alienStartX, alienStartY);
-		checkSpaceshipCollision(initial_x, initial_y, alienStartX, alienStartY, heartStatus);
+        checkLeftBoundaryCollision(alienStartX, alienStartY);
+        checkSpaceshipCollision(initial_x, initial_y, alienStartX, alienStartY, heartStatus);
         updateBullets();
         checkBulletCollision(alienStartX, alienStartY);
-        
+
 
         // Check for key presses to move the spaceship
         bool keyPressed = isKeyPressed(whichKey);
@@ -514,7 +514,7 @@ void startGame(bool score, bool restart) {
                     initial_x += 10;
                     spaceship(initial_x, initial_y, initial_x + 31, initial_y + 20);
                     checkSpaceshipCollision(initial_x, initial_y, alienStartX, alienStartY, heartStatus);
-                }                
+                }
             }
             else if (whichKey == 4) {
                 if (initial_y - 1 < 795) {
@@ -541,8 +541,8 @@ void startGame(bool score, bool restart) {
                 system("cls");
                 spaceshipX = initial_x;
                 spaceshipY = initial_y;
-				alienX = alienStartX;
-				alienY = alienStartY;
+                alienX = alienStartX;
+                alienY = alienStartY;
                 drawPauseMenu(spaceshipX, spaceshipY, alienX, alienY, moveDown);
                 move = true;
             }
@@ -615,12 +615,12 @@ void drawPauseMenu(int spaceshipX, int spaceshipY, float alienX, float alienY, b
         if (isKeyPressed(whichKey)) {
             if (whichKey == 2) {
                 selectedOption--;
-                if (selectedOption < 1) 
+                if (selectedOption < 1)
                     selectedOption = 4; // Wrap around
             }
             else if (whichKey == 4) {
                 selectedOption++;
-                if (selectedOption > 4) 
+                if (selectedOption > 4)
                     selectedOption = 1; // Wrap around
             }
             else if (whichKey == 5) {
@@ -642,7 +642,7 @@ void drawPauseMenu(int spaceshipX, int spaceshipY, float alienX, float alienY, b
                 }
                 else if (selectedOption == 4) {
                     saveScore(score, heartStatus);
-					saveGameState(spaceshipX, spaceshipY, alienX, alienY, moveDown);
+                    saveGameState(spaceshipX, spaceshipY, alienX, alienY, moveDown);
                     exit(0);
                 }
             }
@@ -704,10 +704,10 @@ void drawMenu(int spaceshipX, int spaceshipY, float alienX, float alienY, bool m
                 system("cls");
                 startGame(false, true);
             }
-			else if (selectedOption == 2) {
-				system("cls");
-				loadGameState(spaceshipX, spaceshipY, alienX, alienY, moveDown);
-				startGame(false, false);
+            else if (selectedOption == 2) {
+                system("cls");
+                loadGameState(spaceshipX, spaceshipY, alienX, alienY, moveDown);
+                startGame(false, false);
                 return;
             }
             else if (selectedOption == 3) {
@@ -715,7 +715,7 @@ void drawMenu(int spaceshipX, int spaceshipY, float alienX, float alienY, bool m
             }
         }
         else if (whichKey == 7) {
-			system("cls");
+            system("cls");
             displayHighScores();
             return;
         }
@@ -746,7 +746,7 @@ bool checkAliensDead() {
                 check = true;
             else
                 return false;
-            
+
         }
     }
     if (check)
@@ -758,7 +758,7 @@ bool checkAliensDead() {
 void drawWinGame() {
     int selectedOption = 1; // Default
     int whichKey;
-	PlaySound(TEXT("YouWin.wav"), NULL, SND_FILENAME | SND_ASYNC); // Play win sound
+    PlaySound(TEXT("YouWin.wav"), NULL, SND_FILENAME | SND_ASYNC); // Play win sound
     while (true) {
         drawText(50, 600, 50, 255, 255, 255, "Space Explorers");
         drawText(50, 750, 200, 0, 255, 0, "YOU WIN!");
@@ -824,7 +824,7 @@ void drawWinGame() {
                     exit(0);
                 }
                 else if (selectedOption == 3) {
-					saveScore(score, heartStatus);
+                    saveScore(score, heartStatus);
                     exit(0);
                 }
             }
@@ -835,7 +835,7 @@ void drawWinGame() {
 void drawLoseGame() {
     int selectedOption = 1; // Default
     int whichKey;
-	PlaySound(TEXT("YouLose.wav"), NULL, SND_FILENAME | SND_ASYNC); // Play lose sound
+    PlaySound(TEXT("YouLose.wav"), NULL, SND_FILENAME | SND_ASYNC); // Play lose sound
     while (true) {
         drawText(50, 600, 50, 255, 255, 255, "Space Explorers");
         drawText(50, 750, 200, 255, 0, 0, "YOU LOST!");
@@ -892,7 +892,7 @@ void drawLoseGame() {
                     prev_score = 0;
                     score = 0;
                     resetAliens();
-                    drawAliens(1250, 200); 
+                    drawAliens(1250, 200);
                     system("cls");
                     startGame(true, true);
                     return;
@@ -901,7 +901,7 @@ void drawLoseGame() {
                     exit(0);
                 }
                 else if (selectedOption == 3) {
-					saveScore(score, heartStatus);
+                    saveScore(score, heartStatus);
                     exit(0);
                 }
             }
@@ -925,8 +925,8 @@ void GameOver(bool playerDied) {
 
 int main() {
     for (int x = 0; x < 5; x++) {
-       for (int y = 0; y < 10; y++) {
-           alienActive[x][y] = true;
+        for (int y = 0; y < 10; y++) {
+            alienActive[x][y] = true;
         }
     }
     while (true) {
