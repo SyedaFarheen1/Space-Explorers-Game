@@ -293,7 +293,7 @@ void eraseAlien(int x1, int y1) {
 
 void eraseAliens(int x1, int y1);
 
-void moveAliens(float& x1, float& y1, int& prevX, int& prevY, bool& moveDown, bool move) {
+void moveAliens(float& x1, float& y1, float& prevX, float& prevY, bool& moveDown, bool move) {
     if (move) {
         static int moveCounter = 0;
         prevX = x1;
@@ -467,8 +467,8 @@ void startGame(bool score, bool restart) {
     // Initial positions for aliens
     float alienStartX = 1250.0;
     float alienStartY = 200.0;
-    int prevAlienX = alienStartX;
-    int prevAlienY = alienStartY;
+    float prevAlienX = alienStartX;
+    float prevAlienY = alienStartY;
     bool moveDown = true;
     bool move = true;
 
