@@ -448,7 +448,12 @@ void checkLeftBoundaryCollision(int alienStartX, int alienStartY);
 
 void startGame(bool score, bool restart) {
     int whichKey;
-    prev_score = score ? 0 : prev_score;
+    if (score) {
+        prev_score = 0;
+    }
+    else {
+        prev_score = prev_score;
+    }
     if (restart) {
         PlaySound(TEXT("Countdown.wav"), NULL, SND_FILENAME | SND_ASYNC);
         system("cls");
