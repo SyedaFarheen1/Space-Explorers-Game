@@ -371,8 +371,8 @@ void updateBullets() {
     }
 }
 
-bool checkIfBulletCollision(int bx, int by, int ax, int ay) {
-    return (bx >= ax && bx <= ax + 30) && (by >= ay && by <= ay + 25);
+bool checkIfBulletCollision(int bulletX, int bulletY, int alienX, int alienY) {
+    return (bulletX >= alienX && bulletX <= alienX + 30) && (bulletY >= alienY && bulletY <= alienY + 25);
 }
 
 bool checkIfSpaceshipCollision(int spaceshipX, int spaceshipY, int alienX, int alienY) {
@@ -380,13 +380,9 @@ bool checkIfSpaceshipCollision(int spaceshipX, int spaceshipY, int alienX, int a
     int spaceshipWidth = 30;
     int spaceshipHeight = 50;
 
-    // Define the alien boundaries
-    int alienWidth = 25;
-    int alienHeight = 25;
-
     // Check if the spaceship and alien overlap
-    bool collisionX = spaceshipX < alienX + alienWidth && spaceshipX + spaceshipWidth > alienX;
-    bool collisionY = spaceshipY < alienY + alienHeight && spaceshipY + spaceshipHeight > alienY;
+    bool collisionX = spaceshipX < alienX + 25 && spaceshipX + spaceshipWidth > alienX;
+    bool collisionY = spaceshipY < alienY + 25 && spaceshipY + spaceshipHeight > alienY;
 
     return collisionX && collisionY;
 }
