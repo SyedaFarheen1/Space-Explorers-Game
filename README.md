@@ -1,6 +1,4 @@
-===========================
 Space Explorers Game
-===========================
 
 Welcome to Space Explorers! Your mission is to defend your spaceship from the invading alien grid. Destroy all aliens before they reach the left side of the screen!
 
